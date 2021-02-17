@@ -1,0 +1,7 @@
+Enhancement of image quality by registration of short exposure images
+
+In this code I investigate an approach to computationally improve the quality and resolution of transmission electron microscopy images by combining information from  multiple short exposure images registered using intensity and spatial information.
+The registration part of the code is from my colleague and has been already published.
+The steps of the method are the following: 1.sharpening the stack of images, 2. registration of the stack of images, 3. aggregation of the stack of images.
+
+In this project I would like to improve the quality of the rest of the code, make it faster, with better usage of memory and more organized.
