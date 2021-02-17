@@ -1,0 +1,12 @@
+All line's numbers are from the files in this folder.
+
+3a. Lines with command append (16, 24, 32 - for loops) takes the most time, so there could be some place for optimization. But most importantly line 44 as multiplication of matrices takes the majority of the time.
+
+Lines with command append create the most memory, so lines 16, 24, 32.
+
+3b. In case of first two functions, the longest time takes the 'if' conditions with comparision operators, but I am not sure if there is a way how to optimize that. But line 55 could be optimize as it contains factorization.
+
+Line 55 (factorize) causes, for sure, the biggest increase in memory.
+
+3c. Put the matrices into numpy arrays and replace the multiplication of matrices with inner product of vectors (dot). This made the code 90 times faster.
+
