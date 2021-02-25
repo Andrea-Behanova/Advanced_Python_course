@@ -11,13 +11,13 @@ import time
 from scipy import ndimage
 import filters
 
-paths = 'E:/MiniTEM/2020-03-10_Microtubules/2um/site2/10ms3500ill'
+paths = 'C:/Users/andre/Desktop/10ms3500ill_cropped'
 onlyfiles = [f for f in listdir(paths) if isfile(join(paths, f))]
 
 mid_index = len(onlyfiles) // 2
 ref_paths = onlyfiles[mid_index]
 flo_paths = onlyfiles[0:mid_index] + onlyfiles[mid_index+1:]
-out_paths = './dataset/registered/reg'
+out_paths = 'C:/Users/andre/Desktop/10ms3500ill_cropped/registered/reg'
 
 
 #print(ref_paths)
@@ -47,11 +47,6 @@ if __name__ == '__main__':
     #parallel registration
     with mp.Pool(4) as p:
         p.map(registr, all_p)
-
-
-    # registration of all images to the first one
-    #for i in range(len(flo_paths)):
-    #    reg.run(join(paths,ref_paths), join(paths,flo_paths[i]), out_paths+str(i+2).zfill(3)+'.tiff')
 
     # merging registered images into 3D volume
     regpath = 'c:/master/registration/dataset/registered'
