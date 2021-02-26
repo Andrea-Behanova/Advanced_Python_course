@@ -3,16 +3,15 @@ import register_example_with_adam as reg
 from skimage import io
 import numpy as np
 from os import listdir
-import scipy.ndimage
 from os.path import isfile, join
 import multiprocessing as mp
 from scipy import ndimage
 import filters
 
-# import line_profiler
-# import atexit
-# profile = line_profiler.LineProfiler()
-# atexit.register(profile.print_stats)
+import line_profiler
+import atexit
+profile = line_profiler.LineProfiler()
+atexit.register(profile.print_stats)
 
 paths = 'C:/Users/andre/Desktop/10ms3500ill_cropped'
 onlyfiles = [f for f in listdir(paths) if isfile(join(paths, f))]
@@ -22,8 +21,6 @@ ref_paths = onlyfiles[mid_index]
 flo_paths = onlyfiles[0:mid_index] + onlyfiles[mid_index+1:]
 out_paths = 'C:/Users/andre/Desktop/10ms3500ill_cropped/registered/reg'
 
-
-# @profile
 def sharpen(im,alpha,sigma1,sigma2):
     im = im.astype('float')
     im = filters.normalize(im, 0, None) * 0.5 + 0.25
@@ -33,70 +30,21 @@ def sharpen(im,alpha,sigma1,sigma2):
     sharpened = im + alpha * (blurred_f - filter_blurred_f)
     return np.clip(sharpened, a_min = 0.0, a_max = 1.0)
 
-# @profile
 def registr(all_paths):
     ref = all_paths[0]
     flo = all_paths[1]
     out = all_paths[2]
     reg.run(ref,flo,out)
 
-# @profile
-def vol_3D(regfiles, sharpening, alpha, sigma1, sigma2, ref_im, sharpened, regpath):
-    #final_vol[0,:,:] = sharpened
-    x_start = 1
-    x_end = len(ref_im[0])
-    y_start = 1
-    y_end = len(ref_im[1])
-
-    final_vol = [sharpen(io.imread(regpath + p, as_gray=True),alpha,sigma1,sigma2) for p in regfiles]
-    final_vol = np.array(final_vol)
-
-
-    # for i in range(len(regfiles)):
-    #     filee = regpath + regfiles[i]
-    #     reg_im = io.imread(filee, as_gray=True)
-
-    #     #sharpening
-    #     if sharpening == 1:
-    #         sharpened = sharpen(reg_im,alpha,sigma1,sigma2)
-    #     else:
-    #         sharpened = reg_im
-        
-
-    #     final_vol[i+1,:,:] = sharpened
-
-    #     crop_idx = np.nonzero(reg_im)
-    #     x_act_start = min(crop_idx[0])
-    #     x_act_end = max(crop_idx[0])
-    #     y_act_start = min(crop_idx[1])
-    #     y_act_end = max(crop_idx[1])
-
-    #     if x_act_start > x_start:
-    #         x_start = x_act_start
-
-    #     if x_act_end < x_end:
-    #         x_end = x_act_end
-
-    #     if y_act_start > y_start:
-    #         y_start = y_act_start
-
-    #     if y_act_end < y_end:
-    #         y_end = y_act_end
-
-    #crop mask in 3D
-    crop_vol = final_vol
-    #crop_vol = final_vol[:,x_start+1:x_end-1,y_start+1:y_end-1]
+def vol_3D(regfiles, sharpening, alpha, sigma1, sigma2, regpath):
+    final_vol = np.array([sharpen(io.imread(regpath + p, as_gray=True),alpha,sigma1,sigma2) for p in regfiles])
+    crop_vol = final_vol[:,21:437,50:398]
     return crop_vol
 
-# @profile
 def aggregation(crop_vol):
     # Aggregation
-    agg_im_mean = np.zeros((crop_vol.shape[1],crop_vol.shape[2]))
-    agg_im_median = np.zeros((crop_vol.shape[1],crop_vol.shape[2]))
-    for i in range(crop_vol.shape[1]):
-        for j in range(crop_vol.shape[2]):
-            agg_im_mean[i,j] = np.mean(crop_vol[:,i,j])
-            agg_im_median[i,j] = np.median(crop_vol[:,i,j])
+    agg_im_mean = np.mean(crop_vol, axis=0)
+    agg_im_median = np.median(crop_vol, axis=0)
     return agg_im_mean, agg_im_median
 
 if __name__ == '__main__':
@@ -106,16 +54,11 @@ if __name__ == '__main__':
         all_p.append(p)
 
     #parallel registration
-    # with mp.Pool(4) as p:
-    #     p.map(registr, all_p)
+    with mp.Pool(4) as p:
+        p.map(registr, all_p)
 
     # merging registered images into 3D volume
-    regpath = out_paths[:-3]
-    regfiles = [f for f in listdir(regpath) if isfile(join(regpath, f))]
-
-    ref_file = join(paths,ref_paths)
-    ref_im = io.imread(ref_file, as_gray=True)
-    final_vol = np.zeros((len(regfiles)+1,ref_im.shape[0],ref_im.shape[1]))
+    regfiles = [f for f in listdir(out_paths[:-3]) if isfile(join(out_paths[:-3], f))]
 
     #sharpening
     sharpening = 1
@@ -123,12 +66,7 @@ if __name__ == '__main__':
     sigma2 = 0.5
     alpha = 50
 
-    if sharpening == 1:
-        sharpened = sharpen(ref_im,alpha,sigma1,sigma2)
-    else:
-        sharpened = ref_im
-
-    crop_vol = vol_3D(regfiles, sharpening, alpha, sigma1, sigma2, ref_im, sharpened, regpath)
+    crop_vol = vol_3D(regfiles, sharpening, alpha, sigma1, sigma2, out_paths[:-3])
 
     io.imsave('./dataset/3Dvol_pattern.tiff', (crop_vol*65535).astype('uint16')) #*65535 if shapening
 
